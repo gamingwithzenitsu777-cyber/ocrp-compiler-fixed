@@ -1,0 +1,40 @@
+name: Compile OCRP Pawn Gamemode
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'gamemodes/**'
+      - 'include/**'
+      - '.github/workflows/compile.yml'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install compiler
+        run: |
+          git clone --depth 1 https://github.com/pawn-lang/compiler.git compiler
+          chmod +x compiler/pawncc
+
+      - name: Get SA-MP 0.3.7-R2-2-1 includes
+        run: |
+          git clone --depth 1 --branch 0.3.7-R2-2-1 https://github.com/pawn-lang/samp-stdlib.git samp-stdlib
+          git clone --depth 1 https://github.com/pawn-lang/pawn-stdlib.git pawn-stdlib
+          mkdir -p build_include
+          cp pawn-stdlib/*.inc build_include/
+          cp samp-stdlib/*.inc build_include/
+          cp include/*.inc build_include/ || true
+
+      - name: Compile
+        run: |
+          ./compiler/pawncc gamemodes/ocrp.pwn -i build_include -o gamemodes/ocrp.amx
+
+      - name: Upload AMX
+        uses: actions/upload-artifact@v4
+        with:
+          name: OCRP-AMX
+          path: gamemodes/ocrp.amx
